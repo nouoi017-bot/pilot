@@ -1,0 +1,505 @@
+```html
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>اربح معانا - المنصة الرسمية للمكافآت والجوائز</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- JS Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <!-- Tone.js for Audio Synthesis -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&family=Cairo:wght@700;900&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        gold: {
+                            400: '#facc15',
+                            500: '#eab308',
+                            600: '#ca8a04',
+                        },
+                        darkbg: '#0f1220',
+                        darkcard: '#171b2e',
+                    },
+                    fontFamily: {
+                        sans: ['Tajawal', 'sans-serif'],
+                        heading: ['Cairo', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Tajawal', sans-serif;
+            background-color: #0f1220;
+            color: #f5f6fa;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            overflow-x: hidden;
+        }
+
+        .glow-gold {
+            box-shadow: 0 0 25px rgba(247, 201, 72, 0.35);
+        }
+
+        /* Wheel Styling */
+        .wheel-container {
+            position: relative;
+            width: 280px;
+            height: 280px;
+            margin: 0 auto;
+        }
+        @media (min-width: 640px) {
+            .wheel-container {
+                width: 320px;
+                height: 320px;
+            }
+        }
+        #wheelCanvas {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            box-shadow: 0 0 25px rgba(247, 201, 72, 0.4), inset 0 0 15px rgba(0,0,0,0.8);
+            transition: transform 4.5s cubic-bezier(0.12, 0.98, 0.25, 1);
+        }
+        .wheel-pointer {
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 14px solid transparent;
+            border-right: 14px solid transparent;
+            border-top: 28px solid #ff5566;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.6));
+            z-index: 10;
+        }
+
+        @keyframes pulse-shake {
+            0%, 100% { transform: scale(1) rotate(0deg); }
+            25% { transform: scale(1.03) rotate(-2deg); }
+            75% { transform: scale(1.03) rotate(2deg); }
+        }
+        .animate-prank {
+            animation: pulse-shake 0.5s infinite ease-in-out;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between">
+
+    <!-- Header Navigation -->
+    <header class="sticky top-0 z-30 bg-[#171b2e]/90 backdrop-blur-md border-b border-slate-800">
+        <div class="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-500 to-yellow-300 flex items-center justify-center text-slate-950 font-black text-xl shadow-lg glow-gold">
+                    🎁
+                </div>
+                <div>
+                    <h1 class="text-xl font-black bg-gradient-to-r from-yellow-300 via-amber-400 to-yellow-500 bg-clip-text text-transparent">
+                        اربح معانا
+                    </h1>
+                    <p class="text-[10px] text-slate-400 font-bold">المنصة الأولى للجوائز والمهام اليومية ⚡</p>
+                </div>
+            </div>
+
+            <!-- Fake Balance Header -->
+            <div class="flex items-center gap-2 bg-slate-900 border border-slate-700/60 px-3 py-1.5 rounded-full">
+                <i class="fa-solid fa-coins text-yellow-400 animate-pulse"></i>
+                <span class="text-xs font-bold text-yellow-400" id="userCoins">1,450,000 نقطة ($1,450)</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Dynamic Container -->
+    <main class="max-w-4xl mx-auto px-4 py-6 flex-1 w-full" id="mainContent">
+
+        <!-- Navigation Tabs -->
+        <div class="flex rounded-2xl bg-[#171b2e] p-1.5 mb-6 border border-slate-800 shadow-md">
+            <button onclick="switchTab('tasks')" id="tab-tasks" class="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all bg-amber-500 text-slate-950 shadow-md">
+                <i class="fa-solid fa-list-check ml-1"></i> المهام اليومية
+            </button>
+            <button onclick="switchTab('wheel')" id="tab-wheel" class="flex-1 py-2.5 rounded-xl text-sm font-bold text-slate-400 hover:text-white transition-all">
+                <i class="fa-solid fa-dharmachakra ml-1"></i> عجلة الحظ
+            </button>
+            <button onclick="switchTab('withdraw')" id="tab-withdraw" class="flex-1 py-2.5 rounded-xl text-sm font-bold text-slate-400 hover:text-white transition-all">
+                <i class="fa-solid fa-wallet ml-1"></i> سحب الأرباح
+            </button>
+        </div>
+
+        <!-- 1. TASKS TAB -->
+        <section id="sec-tasks" class="space-y-4">
+            <div class="bg-gradient-to-r from-amber-500/10 via-yellow-500/5 to-transparent p-4 rounded-2xl border border-amber-500/30 flex justify-between items-center mb-4">
+                <div>
+                    <h3 class="font-bold text-yellow-400 text-base">مهام سريعة عالية المكافأة ⚡</h3>
+                    <p class="text-xs text-slate-400">أكمل المهام التالية لتحصيل النقاط وتحويلها مباشرة لرصيدك</p>
+                </div>
+                <span class="bg-amber-500 text-slate-950 text-xs font-black px-2.5 py-1 rounded-lg">محدثة الآن</span>
+            </div>
+
+            <!-- Task Items -->
+            <div class="bg-[#171b2e] rounded-2xl p-4 border border-slate-800 flex items-center justify-between gap-3 shadow-sm hover:border-slate-700 transition">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 rounded-xl bg-red-500/10 text-red-500 flex items-center justify-center text-xl">
+                        <i class="fa-brands fa-youtube"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-sm text-white">مشاهدة فيديو ترويجي (30 ثانية)</h4>
+                        <p class="text-xs text-emerald-400 font-bold mt-0.5">+150,000 نقطة ($150)</p>
+                    </div>
+                </div>
+                <button onclick="openRegisterModal('مشاهدة الفيديو')" class="bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-black px-4 py-2.5 rounded-xl shadow transition">
+                    إنجاز المهمة
+                </button>
+            </div>
+
+            <div class="bg-[#171b2e] rounded-2xl p-4 border border-slate-800 flex items-center justify-between gap-3 shadow-sm hover:border-slate-700 transition">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 rounded-xl bg-sky-500/10 text-sky-400 flex items-center justify-center text-xl">
+                        <i class="fa-brands fa-telegram"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-sm text-white">متابعة قناة الأرباح على تيليجرام</h4>
+                        <p class="text-xs text-emerald-400 font-bold mt-0.5">+300,000 نقطة ($300)</p>
+                    </div>
+                </div>
+                <button onclick="openRegisterModal('متابعة قناة تيليجرام')" class="bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-black px-4 py-2.5 rounded-xl shadow transition">
+                    إنجاز المهمة
+                </button>
+            </div>
+
+            <div class="bg-[#171b2e] rounded-2xl p-4 border border-slate-800 flex items-center justify-between gap-3 shadow-sm hover:border-slate-700 transition">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-users"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-sm text-white">دعوة 3 أصدقاء للبرنامج</h4>
+                        <p class="text-xs text-emerald-400 font-bold mt-0.5">+500,000 نقطة ($500)</p>
+                    </div>
+                </div>
+                <button onclick="openRegisterModal('دعوة الأصدقاء')" class="bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-black px-4 py-2.5 rounded-xl shadow transition">
+                    إنجاز المهمة
+                </button>
+            </div>
+        </section>
+
+        <!-- 2. WHEEL TAB -->
+        <section id="sec-wheel" class="hidden text-center bg-[#171b2e] rounded-3xl p-6 border border-slate-800 shadow-xl">
+            <h3 class="text-xl font-black text-amber-400 mb-1">عجلة الحظ الكبرى 🎡</h3>
+            <p class="text-xs text-slate-400 mb-6">أدِر العجلة واحصل على هدايا نقدية وجوائز فورية تصل لـ $1,000!</p>
+
+            <div class="wheel-container mb-6">
+                <div class="wheel-pointer"></div>
+                <canvas id="wheelCanvas" width="320" height="320"></canvas>
+            </div>
+
+            <button onclick="openRegisterModal('تدوير عجلة الحظ')" class="w-full max-w-xs py-3.5 px-6 bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-500 hover:to-yellow-600 text-slate-950 font-black text-base rounded-2xl shadow-lg glow-gold transition-all active:scale-95 mx-auto">
+                <i class="fa-solid fa-play ml-1"></i> أدِر العجلة الآن!
+            </button>
+        </section>
+
+        <!-- 3. WITHDRAW TAB -->
+        <section id="sec-withdraw" class="hidden bg-[#171b2e] rounded-3xl p-6 border border-slate-800 shadow-xl">
+            <div class="text-center max-w-md mx-auto">
+                <div class="w-16 h-16 bg-emerald-500/10 text-emerald-400 rounded-2xl flex items-center justify-center text-3xl mx-auto mb-4 border border-emerald-500/20">
+                    <i class="fa-solid fa-money-bill-wave"></i>
+                </div>
+                <h3 class="text-xl font-black text-white mb-2">سحب الأرباح الفوري</h3>
+                <p class="text-xs text-slate-400 mb-6">رصيدك المتاح حالياً للسحب هو <span class="text-emerald-400 font-bold">$1,450 دولار</span></p>
+
+                <div class="space-y-4 text-right text-sm mb-6">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-300 mb-1">اختر طريقة الدفع الفوري:</label>
+                        <select class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-amber-500">
+                            <option>CCP / BaridiMob (الجزائر - تحويل سريع)</option>
+                            <option>PayPal (تحويل إلكتروني مباشر)</option>
+                            <option>USDT / Binance (محفظة رقمية)</option>
+                            <option>Bank Wire (حساب بنكي)</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-300 mb-1">رقم الحساب أو معرف الدفع:</label>
+                        <input type="text" placeholder="مثال: 00799999xxxxxx" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-amber-500">
+                    </div>
+                </div>
+
+                <button onclick="openRegisterModal('طلب سحب الأرباح')" class="w-full py-4 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-slate-950 font-black text-base rounded-2xl shadow-lg transition-all active:scale-95">
+                    تأكيد وتحويل ($1,450)
+                </button>
+            </div>
+        </section>
+
+        <!-- PRANK REVEAL SECTION (Hidden Initially) -->
+        <section id="prankSection" class="hidden text-center py-4">
+            <div class="bg-gradient-to-b from-slate-900 via-[#171b2e] to-slate-900 border-4 border-amber-400 rounded-3xl p-6 sm:p-10 shadow-2xl relative overflow-hidden animate-prank">
+                
+                <div class="text-7xl mb-4 animate-bounce">😂🔥</div>
+
+                <span class="inline-block bg-red-600 text-white font-black text-xs px-4 py-1.5 rounded-full mb-4 uppercase tracking-widest shadow-md">
+                    مقلب رسمي 100%
+                </span>
+
+                <!-- Giant Prank Phrase -->
+                <h2 class="font-heading text-4xl sm:text-6xl font-black text-yellow-400 leading-tight mb-4 drop-shadow-lg">
+                    تربح نمي يا معيرش
+                </h2>
+
+                <p class="text-xl text-slate-100 font-bold mb-6">
+                    مشي الدراهم! تعيش وتاكل غيرها يا معيرش الحبيب! 😜💸
+                </p>
+
+                <div class="bg-slate-950/80 border border-slate-800 p-5 rounded-2xl max-w-lg mx-auto text-xs sm:text-sm text-slate-300 mb-8 leading-relaxed shadow-inner">
+                    لا توجد أرباح ولا تحويلات! هذا الموقع مصمم خصيصاً كشاشة مقلب ضاحكة لك من أصدقائك. شربت المقلب بنجاح 🎈!
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex flex-col sm:flex-row justify-center gap-3">
+                    <button onclick="shareWhatsApp()" class="py-3.5 px-6 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-2xl text-sm transition-all flex items-center justify-center gap-2 shadow-lg">
+                        <i class="fa-brands fa-whatsapp text-lg"></i> شارك المقلب على واتساب
+                    </button>
+                    <button onclick="shareTelegram()" class="py-3.5 px-6 bg-sky-500 hover:bg-sky-600 text-white font-bold rounded-2xl text-sm transition-all flex items-center justify-center gap-2 shadow-lg">
+                        <i class="fa-brands fa-telegram text-lg"></i> شارك المقلب على تيليجرام
+                    </button>
+                    <button onclick="location.reload()" class="py-3.5 px-6 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-2xl text-sm transition-all flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-rotate-right"></i> إعادة التجربة
+                    </button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- REALISTIC REGISTRATION MODAL -->
+    <div id="registerModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-[#171b2e] border border-slate-700 rounded-3xl p-6 w-full max-w-md shadow-2xl relative text-right">
+            
+            <button onclick="closeRegisterModal()" class="absolute left-4 top-4 text-slate-400 hover:text-white">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+
+            <div class="text-center mb-6">
+                <div class="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 text-2xl mx-auto mb-2">
+                    <i class="fa-solid fa-user-plus"></i>
+                </div>
+                <h3 class="text-xl font-black text-white">إنشاء حساب جديد</h3>
+                <p class="text-xs text-slate-400 mt-1" id="regReasonText">يجب إنشاء حساب موثق لحفظ النقاط وتحويل الأموال.</p>
+            </div>
+
+            <!-- Error message container -->
+            <div id="regError" class="hidden mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-bold text-center"></div>
+
+            <!-- Registration Form -->
+            <form onsubmit="handleRegistration(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-300 mb-1">البريد الإلكتروني:</label>
+                    <input type="email" id="regEmail" required placeholder="name@example.com" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-amber-500 transition">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-300 mb-1">كلمة المرور:</label>
+                    <input type="password" id="regPassword" required placeholder="••••••••" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-amber-500 transition">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-300 mb-1">تأكيد كلمة المرور:</label>
+                    <input type="password" id="regConfirmPassword" required placeholder="••••••••" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-amber-500 transition">
+                </div>
+
+                <button type="submit" id="btnSubmitReg" class="w-full bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-500 hover:to-yellow-600 text-slate-950 font-black py-3.5 rounded-xl text-sm transition shadow-lg glow-gold">
+                    إنشاء الحساب الآن
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- LOADING OVERLAY -->
+    <div id="loadingOverlay" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 flex flex-col items-center justify-center hidden">
+        <div class="w-16 h-16 border-4 border-amber-400 border-t-transparent rounded-full animate-spin mb-4"></div>
+        <p class="text-amber-400 font-bold text-base animate-pulse">جاري إنشاء الحساب وتوثيق الرصيد...</p>
+    </div>
+
+    <!-- Footer -->
+    <footer class="text-center py-4 border-t border-slate-900 text-xs text-slate-500">
+        منصة اربح معانا الرسمية © 2026 - جميع الحقوق محفوظة
+    </footer>
+
+    <!-- App Logic Scripts -->
+    <script>
+        /* Tab Switching Logic */
+        function switchTab(tab) {
+            document.getElementById('sec-tasks').classList.add('hidden');
+            document.getElementById('sec-wheel').classList.add('hidden');
+            document.getElementById('sec-withdraw').classList.add('hidden');
+
+            document.getElementById('tab-tasks').className = "flex-1 py-2.5 rounded-xl text-sm font-bold text-slate-400 hover:text-white transition-all";
+            document.getElementById('tab-wheel').className = "flex-1 py-2.5 rounded-xl text-sm font-bold text-slate-400 hover:text-white transition-all";
+            document.getElementById('tab-withdraw').className = "flex-1 py-2.5 rounded-xl text-sm font-bold text-slate-400 hover:text-white transition-all";
+
+            document.getElementById('sec-' + tab).classList.remove('hidden');
+            document.getElementById('tab-' + tab).className = "flex-1 py-2.5 rounded-xl text-sm font-bold transition-all bg-amber-500 text-slate-950 shadow-md";
+
+            if (tab === 'wheel') {
+                drawWheel();
+            }
+        }
+
+        /* Modal Handlers */
+        function openRegisterModal(actionName) {
+            document.getElementById('regReasonText').innerText = `لإتمام عملية (${actionName})، يجب إنشاء حساب موثق بالبريد الإلكتروني أولاً.`;
+            document.getElementById('regError').classList.add('hidden');
+            document.getElementById('registerModal').classList.remove('hidden');
+        }
+
+        function closeRegisterModal() {
+            document.getElementById('registerModal').classList.add('hidden');
+        }
+
+        /* Form Validation & Prank Execution */
+        function handleRegistration(e) {
+            e.preventDefault();
+
+            const email = document.getElementById('regEmail').value.trim();
+            const password = document.getElementById('regPassword').value;
+            const confirmPassword = document.getElementById('regConfirmPassword').value;
+            const errorDiv = document.getElementById('regError');
+
+            if (!email || !password || !confirmPassword) {
+                errorDiv.innerText = "يرجى ملء جميع الحقول المطلوب الإجابة عنها!";
+                errorDiv.classList.remove('hidden');
+                return;
+            }
+
+            if (password !== confirmPassword) {
+                errorDiv.innerText = "كلمة المرور وتأكيد كلمة المرور غير متطابقتين!";
+                errorDiv.classList.remove('hidden');
+                return;
+            }
+
+            // Close Register Modal & Show Loading
+            closeRegisterModal();
+            const loader = document.getElementById('loadingOverlay');
+            loader.classList.remove('hidden');
+
+            // Simulate fake 2-second setup delay before prank reveal
+            setTimeout(() => {
+                loader.classList.add('hidden');
+                executePrank();
+            }, 2000);
+        }
+
+        /* Wheel Canvas Logic */
+        const segments = [
+            { label: "💵 $1000 كاش", color: "#eab308" },
+            { label: "📱 أيفون 16", color: "#10b981" },
+            { label: "🏎️ سيارة فاخرة", color: "#3b82f6" },
+            { label: "💎 500$ ذهب", color: "#8b5cf6" },
+            { label: "🎁 هدية مفاجأة", color: "#ec4899" },
+            { label: "✈️ رحلة سفر", color: "#f97316" }
+        ];
+
+        function drawWheel() {
+            const canvas = document.getElementById('wheelCanvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            const width = canvas.width;
+            const center = width / 2;
+            const radius = center - 10;
+            const arc = (2 * Math.PI) / segments.length;
+
+            ctx.clearRect(0, 0, width, width);
+
+            segments.forEach((seg, i) => {
+                const angle = i * arc;
+                ctx.beginPath();
+                ctx.fillStyle = seg.color;
+                ctx.moveTo(center, center);
+                ctx.arc(center, center, radius, angle, angle + arc);
+                ctx.lineTo(center, center);
+                ctx.fill();
+
+                // Segment Labels
+                ctx.save();
+                ctx.translate(center, center);
+                ctx.rotate(angle + arc / 2);
+                ctx.textAlign = "right";
+                ctx.fillStyle = "#0f1220";
+                ctx.font = "bold 14px Tajawal";
+                ctx.fillText(seg.label, radius - 20, 5);
+                ctx.restore();
+            });
+
+            // Center Pin
+            ctx.beginPath();
+            ctx.arc(center, center, 24, 0, 2 * Math.PI);
+            ctx.fillStyle = "#0f1220";
+            ctx.fill();
+            ctx.strokeStyle = "#facc15";
+            ctx.lineWidth = 4;
+            ctx.stroke();
+        }
+
+        /* Synthesized Laugh Sound Effects */
+        function playLaughSound() {
+            try {
+                const synth = new Tone.PolySynth(Tone.Synth).toDestination();
+                const now = Tone.now();
+                // Play funny laughter sequence notes
+                synth.triggerAttackRelease(["C5", "E5"], "8n", now);
+                synth.triggerAttackRelease(["G4", "C5"], "8n", now + 0.15);
+                synth.triggerAttackRelease(["E5", "G5"], "8n", now + 0.3);
+                synth.triggerAttackRelease(["C5", "E5"], "8n", now + 0.45);
+                synth.triggerAttackRelease(["G4", "B4"], "4n", now + 0.6);
+            } catch(e) {}
+        }
+
+        /* Prank Execution */
+        function executePrank() {
+            // Hide navigation & basic sections
+            document.getElementById('sec-tasks').classList.add('hidden');
+            document.getElementById('sec-wheel').classList.add('hidden');
+            document.getElementById('sec-withdraw').classList.add('hidden');
+            document.querySelector('.flex.rounded-2xl.bg-\\[\\#171b2e\\]').classList.add('hidden');
+
+            // Show Prank section
+            const prankSection = document.getElementById('prankSection');
+            prankSection.classList.remove('hidden');
+
+            // Play Laugh Sound & Launch Confetti
+            playLaughSound();
+            confetti({
+                particleCount: 180,
+                spread: 100,
+                origin: { y: 0.5 }
+            });
+        }
+
+        /* Social Share Actions */
+        function shareWhatsApp() {
+            const text = encodeURIComponent("يا معيرش! تعيش وتاكل غيرها 😜 جربت موقع اربح معانا وطلعت مقلب من الآخر! اضغط وسجل وشوف شو راح تجيب 😂🔥:");
+            window.open(`https://api.whatsapp.com/send?text=${text}`, '_blank');
+        }
+
+        function shareTelegram() {
+            const text = encodeURIComponent("تربح نمي يا معيرش مشي الدراهم! 😜😂 مقلب اربح معانا المخصص لك:");
+            window.open(`https://t.me/share/url?url=${window.location.href}&text=${text}`, '_blank');
+        }
+
+        window.onload = function() {
+            drawWheel();
+        };
+    </script>
+</body>
+</html>
+```
